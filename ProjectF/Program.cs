@@ -10,7 +10,9 @@ namespace ProjectF
     class Program
     {
         static void Main(string[] args){
-            AntlrInputStream inputStream = new AntlrInputStream("a: integer is 777");
+            AntlrInputStream inputStream = new AntlrInputStream("f1: func() is func(p:integer): integer => p+1;" +
+                "b: integer is -10;"+
+                "a: integer is f1(b)");
             ProjectFLexer fLexer = new ProjectFLexer(inputStream);
             CommonTokenStream commonTokenStream = new CommonTokenStream(fLexer);
             ProjectFParser fParser = new ProjectFParser(commonTokenStream);
