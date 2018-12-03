@@ -29,16 +29,23 @@ relation
    : factor (relationOp factor)?
    ;
 
+factorOp
+	: '+' | '-';
+
 factor
-   : term  ('+' | '-' term)*
+   : term  (factorOp term)*
    ;
 
+
+termOp
+	: '*' | '/';
+
 term
-   : unary  ('*' | '/' unary)*
+   : unary  (termOp unary)*
    ;
 
 unary
-   : ('+' | '-')?  secondary
+   : (factorOp)?  secondary
    ;
 
 secondary

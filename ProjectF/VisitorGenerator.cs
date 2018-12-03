@@ -9,6 +9,22 @@ namespace ProjectF
 {
     class VisitorGenerator: ProjectFBaseVisitor<string>
     {
+
+        enum FType
+        {
+            String,
+            Integer,
+            Complex,
+            Real,
+            Rational,
+            Function,
+            Tuple,
+            Map,
+            List
+        }
+
+        private Dictionary<string, FType> _symbolTable = new Dictionary<string, FType>();
+
         public override string VisitProgram([NotNull] ProjectFParser.ProgramContext context)
         {
             string children = "";
@@ -23,15 +39,22 @@ namespace ProjectF
         {
             var name = context.variable().GetText();
             var type = context.type().GetText();
+            var ftype = FType.Integer;
             switch (type)
             {
-                case "integer": type = "int";
+                case "integer":
+                    type = "int";
                     break;
-                case "string": type = "char[]";
+                case "string":
+                    type = "char[]";
+                    ftype = FType.String;
                     break;
-                case "real": type = "float";
+                case "real":
+                    type = "float";
+                    ftype = FType.Real;
                     break;
             }
+            _symbolTable.Add(name, ftype);
             var expression = VisitExpression(context.expression());
             return type + " " + name + " = " + expression + ";\r\n";
         }
