@@ -5,19 +5,28 @@ program
    ;
 
 declaration
-   : Identifier (':' type)? 'is' expression
+   : variable (':' type)? 'is' expression
    ;
+
+variable
+   : Identifier;
 
 expressions
    : expression (',' expression)*
    ;
 
+logicalOp
+   : 'and' | 'or' | 'xor';
+
 expression
-   : relation ('and' | 'or' | 'xor' relation)?
+   : relation (logicalOp relation)?
    ;
 
+relationOp
+   : '<' | '<=' | '>' | '>=' | '=' | '/=';
+
 relation
-   : factor ('<' | '<=' | '>' | '>=' | '=' | '/=' factor)?
+   : factor (relationOp factor)?
    ;
 
 factor
