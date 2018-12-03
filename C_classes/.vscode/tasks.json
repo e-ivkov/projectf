@@ -4,11 +4,26 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "build",
+            "label": "list_build",
             "type": "shell",
             "command": "gcc",
             "args": [
                 "-g","list.c"
+            ],
+            "group": "build",
+            "presentation": {
+                // Reveal the output only if unrecognized errors occur.
+                "reveal": "silent"
+            },
+            // Use the standard MS compiler pattern to detect errors, warnings and infos
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "print_build",
+            "type": "shell",
+            "command": "gcc",
+            "args": [
+                "-g","print.c"
             ],
             "group": "build",
             "presentation": {
