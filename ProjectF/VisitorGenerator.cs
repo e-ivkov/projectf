@@ -90,5 +90,40 @@ namespace ProjectF
             }
             return result;
         }
+
+        public override string VisitFactor([NotNull] ProjectFParser.FactorContext context)
+        {
+            var result = VisitTerm(context.term()[0]);
+            for(int i = 0; i < context.factorOp().Length; i++)
+            {
+                var op = context.factorOp()[i].GetText();
+                result += op + VisitTerm(context.term()[i+1]);
+            }
+            return result;
+        }
+
+        public override string VisitTerm([NotNull] ProjectFParser.TermContext context)
+        {
+            var result = VisitUnary(context.unary()[0]);
+            for (int i = 0; i < context.termOp().Length; i++)
+            {
+                var op = context.termOp()[i].GetText();
+                result += op + VisitUnary(context.unary()[i + 1]);
+            }
+            return result;
+        }
+
+        public override string VisitUnary([NotNull] ProjectFParser.UnaryContext context)
+        {
+            var result = "";
+            if (context.factorOp() != null)
+            {
+                result += context.factorOp().GetText();
+            }
+            result += VisitSecondary(context.secondary());
+            return result;
+        }
+
+
     }
 }
