@@ -86,20 +86,39 @@ int l_length(struct Node *head)
     return i;
 }
 
-void* l_get(struct Node *head, int index)
-{   
-    struct Node* node = head->next;
-    while(node!=NULL && node->index!=index)
+void *l_get(struct Node *head, int index)
+{
+    struct Node *node = head->next;
+    while (node != NULL && node->index != index)
     {
         node = node->next;
     }
-    if (node!=NULL)
+    if (node != NULL)
     {
         return node->data;
     }
     return NULL;
 }
 
+void l_for_loop(struct Node *head)
+{
+    struct Node *node = head->next;
+    while (node != NULL)
+    {
+        void * data = node->data;
+
+        /*
+            here you should cast you data, ex:
+            data = (int*)(data);
+            now in data your int number
+
+            'some your code here'
+
+            use you data then the last string:
+        */
+        node = node->next;
+    }
+}
 main(int argc, char const *argv[])
 {
     struct Node *head = l_createEmptyList();
@@ -118,6 +137,6 @@ main(int argc, char const *argv[])
     printf("\nConcatenate List:\n");
     printList(result);
     printf("\nConcatenate Length:%d\n", l_length(result));
-    printf("GET 0 element: %d", (int*)(l_get(result,5)));
+    printf("GET 0 element: %d", (int *)(l_get(result, 5)));
     return 0;
 }
