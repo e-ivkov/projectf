@@ -5,31 +5,47 @@ program
    ;
 
 declaration
-   : Identifier (':' type)? 'is' expression
+   : variable (':' type)? 'is' expression
    ;
+
+variable
+   : Identifier;
 
 expressions
    : expression (',' expression)*
    ;
 
+logicalOp
+   : 'and' | 'or' | 'xor';
+
 expression
-   : relation ('and' | 'or' | 'xor' relation)?
+   : relation (logicalOp relation)?
    ;
+
+relationOp
+   : '<' | '<=' | '>' | '>=' | '=' | '/=';
 
 relation
-   : factor ('<' | '<=' | '>' | '>=' | '=' | '/=' factor)?
+   : factor (relationOp factor)?
    ;
+
+factorOp
+	: '+' | '-';
 
 factor
-   : term  ('+' | '-' term)*
+   : term  (factorOp term)*
    ;
 
+
+termOp
+	: '*' | '/';
+
 term
-   : unary  ('*' | '/' unary)*
+   : unary  (termOp unary)*
    ;
 
 unary
-   : ('+' | '-')?  secondary
+   : (factorOp)?  secondary
    ;
 
 secondary
