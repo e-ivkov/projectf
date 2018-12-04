@@ -18,12 +18,15 @@ namespace ProjectF
             Complex,
             Real,
             Rational,
+            SystemFucntion,
             Function,
             Tuple,
             Map,
             List,
             Bool
         }
+
+  
 
         private Dictionary<string, FType> _symbolTable = new Dictionary<string, FType>();
         private Dictionary<string, string> _listTable = new Dictionary<string, string>();
@@ -37,6 +40,8 @@ namespace ProjectF
         public override string VisitProgram([NotNull] ProjectFParser.ProgramContext context)
         {
             string children = "";
+
+            _symbolTable.Add("print", FType.SystemFucntion);
             /*foreach(var decl in context.declaration())
             {
                 children += VisitDeclaration(decl);
@@ -196,6 +201,41 @@ namespace ProjectF
                         result = "(" + functionCast[fname] + id + ")(" + VisitExpressions(context.tail()[0].expressions()) +")";
                         break;
                     //func call
+                    case FType.SystemFucntion:
+                        var exType = DetectExpressionType(context.tail()[0].expressions().expression()[0]);
+                        switch (exType)
+                        {
+                            case FType.String:
+                                result = "print_string(" + VisitExpressions(context.tail()[0].expressions()) + ")";
+                                break;
+                            case FType.Integer:
+                                result = "print_int(" + VisitExpressions(context.tail()[0].expressions()) + ")";
+                                break;
+                            case FType.Complex:
+                                break;
+                            case FType.Real:
+                                result = "print_float(" + VisitExpressions(context.tail()[0].expressions()) + ")";
+                                break;
+                            case FType.Rational:
+                                break;
+                            case FType.SystemFucntion:
+                                break;
+                            case FType.Function:
+                                break;
+                            case FType.Tuple:
+                                break;
+                            case FType.Map:
+                                break;
+                            case FType.List:
+                                break;
+                            case FType.Bool:
+                                result = "print_bool(" + VisitExpressions(context.tail()[0].expressions()) + ")";
+                                break;
+                            default:
+                                break;
+                        }
+                        break;
+
                 }
             }
             if (result == "")
@@ -218,6 +258,13 @@ namespace ProjectF
                 expressions += VisitExpression(expr) + ",";
             }
             return expressions.Substring(0, expressions.Length - 1);
+        }
+
+        private FType DetectExpressionType([NotNull] ProjectFParser.ExpressionContext context)
+        {
+            var elementary = context.relation()[0].factor()[0].term()[0].unary()[0].secondary().primary().elementary();
+            return _symbolTable[elementary.Identifier().GetText()];
+            
         }
 
         public override string VisitPrimary([NotNull] ProjectFParser.PrimaryContext context)

@@ -21,7 +21,9 @@ namespace ProjectF
             VisitorGenerator visitor = new VisitorGenerator();
             string[] output_c_code = { visitor.Visit(programContext) };
             System.IO.File.WriteAllLines(@"output.c", output_c_code);
+            Console.ReadLine();
             Process.Start("gcc.exe", "output.c -o a.exe");
+
         }
     }
 }
