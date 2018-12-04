@@ -126,7 +126,7 @@ type
    ;
 
 statements
-   : statement (';' statement)* (';')?
+   : (declaration|statement)  (';' (declaration|statement))* (';')?
    ;
 
 statement
