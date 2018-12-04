@@ -266,11 +266,16 @@ namespace ProjectF
                     ftype = "int";
                     break;
                 case "string":
-                    ftype = "char*";
+                    ftype = "char[]";
                     break;
                 case "real":
                     ftype = "float";
                     break;
+            }
+            if(ftype[0] == '(' && ftype[ftype.Length - 1] == ')')
+            {
+                ftype = "struct Node*";
+
             }
             return ftype;
         }
@@ -289,12 +294,31 @@ namespace ProjectF
             return types;
         }
 
+
+
         public override string VisitParameters([NotNull] ProjectFParser.ParametersContext context)
         {
             var parameters = "";
             for (int i = 0; i < context?.type().Length; i++)
             {
                 parameters += GetCType(context?.type()[i].GetText()) + " " + context?.variable()[i].GetText() + ",";
+                FType ftype = FType.Bool;
+                switch (GetCType(context?.type()[i].GetText()))
+                {
+                    case "int":
+                        ftype = FType.Integer;
+                        break;
+                    case "char[]":
+                        ftype = FType.String;
+                        break;
+                    case "float":
+                        ftype = FType.Real;
+                        break;
+                    case "struct Node*":
+                        ftype = FType.List;
+                        break;
+                }
+                _symbolTable.Add(context?.variable()[i].GetText(), ftype);
             }
             parameters = parameters.Substring(0, parameters.Length - 1);
             return parameters;
