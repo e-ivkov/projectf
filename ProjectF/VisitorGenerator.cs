@@ -35,6 +35,7 @@ namespace ProjectF
         private Dictionary<string, string> varFunction = new Dictionary<string, string>();
         private Stack<string> initializers = new Stack<string>();
         private Stack<string> listVarNames = new Stack<string>();
+        private Stack<string> funcVarNames = new Stack<string>();
         private int varCount = 0;
 
         public override string VisitProgram([NotNull] ProjectFParser.ProgramContext context)
@@ -100,6 +101,7 @@ namespace ProjectF
             {
                 type = "void*";
                 ftype = FType.Function;
+                funcVarNames.Push(name);
             }
             if (type[0] == '(' && type[type.Length-1] == ')')
             {
@@ -110,7 +112,8 @@ namespace ProjectF
             }
             _symbolTable.Add(name, ftype);
             var expression = VisitExpression(context.expression());
-            varFunction.Add(name, expression.Substring(1));
+            if(!varFunction.Keys.Contains(name))
+                varFunction.Add(name, expression.Substring(1));
             var result = type + " " + outName + " = " + expression + ";\r\n";
             if(ftype == FType.List)
             {
@@ -146,6 +149,13 @@ namespace ProjectF
             if (context.relationOp() != null)
             {
                 var op = context.relationOp().GetText();
+                if(op == "=")
+                {
+                    op = "==";
+                }else if (op == "/=")
+                {
+                    op = "!=";
+                }
                 result += op + VisitFactor(context.factor()[1]);
             }
             return result;
@@ -213,12 +223,18 @@ namespace ProjectF
                     case FType.List:
                         result = "*(("+_listTable[id]+"*)l_get(" + id + "," + VisitExpression(context.tail()[0].expression()) + "));";
                         break;
-                    //Tuples and Maps
-                    case FType.Function:
-                        var fname = varFunction[id];
-                        result = "(" + functionCast[fname] + id + ")(" + VisitExpressions(context.tail()[0].expressions()) +");";
+                    //TODO: Tuples and Maps
+                    case FType.Function: 
+                        if (context.tail().Length > 0)
+                        { //func call
+                            var fname = varFunction[id];
+                            result = "(" + functionCast[fname] + id + ")(" + VisitExpressions(context.tail()[0].expressions()) + ");";
+                         } else
+                        {
+                            var fname = varFunction[id];
+                            varFunction.Add(funcVarNames.Pop(), fname);
+                        }
                         break;
-                    //func call
                     case FType.SystemFucntion:
                         var exType = DetectExpressionType(context.tail()[0].expressions().expression()[0]);
                         switch (exType)
@@ -271,11 +287,14 @@ namespace ProjectF
         public override string VisitExpressions([NotNull] ProjectFParser.ExpressionsContext context)
         {
             var expressions = "";
-            foreach(var expr in context.expression())
-            {
-                expressions += VisitExpression(expr) + ",";
+            if (context?.expression() != null) {
+                foreach (var expr in context.expression())
+                {
+                    expressions += VisitExpression(expr) + ",";
+                }
+                return expressions.Substring(0, expressions.Length - 1);
             }
-            return expressions.Substring(0, expressions.Length - 1);
+            return expressions;
         }
 
         private FType DetectExpressionType([NotNull] ProjectFParser.ExpressionContext context)
