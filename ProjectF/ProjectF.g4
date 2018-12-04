@@ -12,7 +12,7 @@ variable
    : Identifier;
 
 expressions
-   : expression (',' expression)*
+   : expression (',' expression)* 
    ;
 
 logicalOp
@@ -108,7 +108,7 @@ mapElement
    ;
 
 list
-   : '(' expressions? ')'
+   : '(' (expressions)? ')'
    ;
 
 type
@@ -126,7 +126,7 @@ type
    ;
 
 statements
-   : statement (';' statement)*
+   : (declaration|statement)  (';' (declaration|statement))* (';')?
    ;
 
 statement
@@ -146,9 +146,17 @@ conditional
    : 'if' expression 'then' statements ('else' statements)? 'end'
    ;
 
+whileloop
+	: ('while' expression) loopbody
+	;
+
+forloop
+	: 'for' (variable 'in')? expression ('..' expression) loopbody
+	;
+
 loop
-   : 'for' (Identifier 'in')? expression ('..' expression) loopbody
-   | ('while' expression) loopbody
+   : forloop
+   | whileloop
    ;
 
 loopbody

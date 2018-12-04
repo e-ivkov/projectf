@@ -18,12 +18,13 @@ namespace ProjectF
             Complex,
             Real,
             Rational,
-            SystemFucntion,
+            PrintFucntion,
             Function,
             Tuple,
             Map,
             List,
-            Bool
+            Bool,
+            LenFunction
         }
 
         public string entry_point = "f_main";
@@ -35,11 +36,13 @@ namespace ProjectF
         private Dictionary<string, string> varFunction = new Dictionary<string, string>();
         private Stack<string> initializers = new Stack<string>();
         private Stack<string> listVarNames = new Stack<string>();
+        private Stack<string> funcVarNames = new Stack<string>();
         private int varCount = 0;
 
         public override string VisitProgram([NotNull] ProjectFParser.ProgramContext context)
         {
-            _symbolTable.Add("print", FType.SystemFucntion);
+            _symbolTable.Add("print", FType.PrintFucntion);
+            _symbolTable.Add("len", FType.LenFunction);
             string children = VisitChildren(context);
 
             
@@ -100,6 +103,7 @@ namespace ProjectF
             {
                 type = "void*";
                 ftype = FType.Function;
+                funcVarNames.Push(name);
             }
             if (type[0] == '(' && type[type.Length-1] == ')')
             {
@@ -110,7 +114,8 @@ namespace ProjectF
             }
             _symbolTable.Add(name, ftype);
             var expression = VisitExpression(context.expression());
-            varFunction.Add(name, expression.Substring(1));
+            if(!varFunction.Keys.Contains(name))
+                varFunction.Add(name, expression.Substring(1));
             var result = type + " " + outName + " = " + expression + ";\r\n";
             if(ftype == FType.List)
             {
@@ -146,6 +151,13 @@ namespace ProjectF
             if (context.relationOp() != null)
             {
                 var op = context.relationOp().GetText();
+                if(op == "=")
+                {
+                    op = "==";
+                }else if (op == "/=")
+                {
+                    op = "!=";
+                }
                 result += op + VisitFactor(context.factor()[1]);
             }
             return result;
@@ -154,6 +166,26 @@ namespace ProjectF
         public override string VisitFactor([NotNull] ProjectFParser.FactorContext context)
         {
             var result = VisitTerm(context.term()[0]);
+            if (_symbolTable.ContainsKey(result) && _symbolTable[result] == FType.List) {
+                if (context.term().Length > 1)
+                {
+                    var second = VisitTerm(context.term()[1]);
+                    if (_symbolTable.ContainsKey(second) && _symbolTable[second] == FType.List)
+                    {
+                        result = "l_concatenate(" + result + "," + second + ");";
+                    }
+                    else
+                    {
+                        //var varName = "_ptr" + (varCount++).ToString();
+                        //var currentListType = _listTable[result];
+                        //var listGenerator = "void *" + varName + " = malloc(sizeof(" + currentListType + "));\r\n";
+                        
+                        //result = listGenerator + "l_add_element(" + result + "," + varName + ");";
+                    }
+                    return result;
+                }
+            }
+
             for(int i = 0; i < context.factorOp().Length; i++)
             {
                 var op = context.factorOp()[i].GetText();
@@ -195,15 +227,27 @@ namespace ProjectF
                 switch (_symbolTable[id])
                 {
                     case FType.List:
-                        result = "*(("+_listTable[id]+"*)l_get(" + id + "," + VisitExpression(context.tail()[0].expression()) + "));";
+                        if (context.tail().Length > 0)
+                            result = "*((" + _listTable[id] + "*)l_get(" + id + "," + VisitExpression(context.tail()[0].expression()) + "));";
+                        else
+                            result = id;
                         break;
-                    //Tuples and Maps
-                    case FType.Function:
-                        var fname = varFunction[id];
-                        result = "(" + functionCast[fname] + id + ")(" + VisitExpressions(context.tail()[0].expressions()) +");";
+                    //TODO: Tuples and Maps
+                    case FType.Function: 
+                        if (context.tail().Length > 0)
+                        { //func call
+                            var fname = varFunction[id];
+                            result = "(" + functionCast[fname] + id + ")(" + VisitExpressions(context.tail()[0].expressions()) + ");";
+                         } else
+                        {
+                            var funVarName = funcVarNames.Pop();
+                            if (!varFunction.Keys.Contains(funVarName)) {
+                                var fname = varFunction[id];
+                                varFunction.Add(funVarName, fname);
+                             }
+                        }
                         break;
-                    //func call
-                    case FType.SystemFucntion:
+                    case FType.PrintFucntion:
                         var exType = DetectExpressionType(context.tail()[0].expressions().expression()[0]);
                         switch (exType)
                         {
@@ -220,7 +264,7 @@ namespace ProjectF
                                 break;
                             case FType.Rational:
                                 break;
-                            case FType.SystemFucntion:
+                            case FType.PrintFucntion:
                                 break;
                             case FType.Function:
                                 break;
@@ -237,7 +281,9 @@ namespace ProjectF
                                 break;
                         }
                         break;
-
+                    case FType.LenFunction:
+                        result = "l_length(" + VisitExpressions(context.tail()[0].expressions()) + ");";
+                        break;
                 }
             }
             if (result == "")
@@ -255,11 +301,14 @@ namespace ProjectF
         public override string VisitExpressions([NotNull] ProjectFParser.ExpressionsContext context)
         {
             var expressions = "";
-            foreach(var expr in context.expression())
-            {
-                expressions += VisitExpression(expr) + ",";
+            if (context?.expression() != null) {
+                foreach (var expr in context.expression())
+                {
+                    expressions += VisitExpression(expr) + ",";
+                }
+                return expressions.Substring(0, expressions.Length - 1);
             }
-            return expressions.Substring(0, expressions.Length - 1);
+            return expressions;
         }
 
         private FType DetectExpressionType([NotNull] ProjectFParser.ExpressionContext context)
@@ -320,6 +369,9 @@ namespace ProjectF
                     break;
                 case "real":
                     ftype = "float";
+                    break;
+                case "func()":
+                    ftype = "void *";
                     break;
             }
             if(ftype[0] == '(' && ftype[ftype.Length - 1] == ')')
@@ -422,12 +474,17 @@ namespace ProjectF
             string listGenerator = "";
             var currentListName = listVarNames.Pop();
             var currentListType = _listTable[currentListName];
-            foreach (var expr in context.expressions()?.expression())
+            if (context?.expressions()?.expression() != null)
             {
-                var varName = "_ptr" + (varCount++).ToString();
-                listGenerator += "void *" + varName + " = malloc(sizeof(" + currentListType + "));\r\n";
-                listGenerator += "*(("+ currentListType +" *)" + varName + " = " + VisitExpression(expr) + ";\r\n";
-                listGenerator += "l_put(head, " + varName + ");\r\n";
+
+
+                foreach (var expr in context.expressions()?.expression())
+                {
+                    var varName = "_ptr" + (varCount++).ToString();
+                    listGenerator += "void *" + varName + " = malloc(sizeof(" + currentListType + "));\r\n";
+                    listGenerator += "(*((" + currentListType + " *)" + varName + ")) = " + VisitExpression(expr) + ";\r\n";
+                    listGenerator += "l_put(head, " + varName + ");\r\n";
+                }
             }
             initializers.Push(listGenerator);
             return "l_createEmptyList()";
@@ -452,6 +509,25 @@ namespace ProjectF
                 result += "else{\r\n" + VisitStatements(context.statements()[1]) + "}\r\n";
             }
             return result;
+        }
+
+        public override string VisitWhileloop([NotNull] ProjectFParser.WhileloopContext context)
+        {
+            var result = "while(" + VisitExpression(context.expression()) + ")";
+            if(context.loopbody() != null)
+            {
+                result += "{\r\n" + VisitLoopbody(context.loopbody()) + "}";
+            }
+            else
+            {
+                result += "{}";
+            }
+            return result;
+        }
+
+        public override string VisitLoopbody([NotNull] ProjectFParser.LoopbodyContext context)
+        {
+            return VisitChildren(context);
         }
     }
 }
