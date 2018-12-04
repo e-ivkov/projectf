@@ -5,10 +5,30 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "list debug",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/list.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": true,
+            "MIMode": "gdb",
+            "miDebuggerPath": "C:/MinGWx64/bin/gdb.exe",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
             "name": "(gdb) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/a.exe",
+            "program": "${workspaceFolder}/list.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

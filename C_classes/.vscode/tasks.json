@@ -8,7 +8,7 @@
             "type": "shell",
             "command": "gcc",
             "args": [
-                "-g","list.c"
+                "-g","list.c", "-o list.exe"
             ],
             "group": "build",
             "presentation": {
