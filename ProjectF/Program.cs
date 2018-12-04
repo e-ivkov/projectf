@@ -10,6 +10,7 @@ namespace ProjectF
 {
     class Program
     {
+
         static void Main(string[] args) {
             string inputCode = System.IO.File.ReadAllText(@"input_code.f");
             AntlrInputStream inputStream = new AntlrInputStream(inputCode);

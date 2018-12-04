@@ -30,6 +30,9 @@ namespace ProjectF
         private List<string> functions = new List<string>();
         private Dictionary<string, string> functionCast = new Dictionary<string, string>();
         private Dictionary<string, string> varFunction = new Dictionary<string, string>();
+        private Stack<string> initializers = new Stack<string>();
+        private Stack<string> listVarNames = new Stack<string>();
+        private int varCount = 0;
 
         public override string VisitProgram([NotNull] ProjectFParser.ProgramContext context)
         {
@@ -93,14 +96,20 @@ namespace ProjectF
             }
             if (type[0] == '(' && type[type.Length-1] == ')')
             {
+                _listTable.Add(name, GetCType(type.Substring(1, type.Length - 2)));
+                listVarNames.Push(name);
                 type = "struct Node*";
                 ftype = FType.List;
-                _listTable.Add(name, type.Substring(1, type.Length - 1));
             }
             _symbolTable.Add(name, ftype);
             var expression = VisitExpression(context.expression());
             varFunction.Add(name, expression.Substring(1));
-            return type + " " + name + " = " + expression + ";\r\n";
+            var result = type + " " + name + " = " + expression + ";\r\n";
+            if(ftype == FType.List)
+            {
+                result += initializers.Pop().Replace("head", name);
+            }
+            return result;
         }
 
         public override string VisitExpression([NotNull] ProjectFParser.ExpressionContext context)
@@ -179,7 +188,7 @@ namespace ProjectF
                 switch (_symbolTable[id])
                 {
                     case FType.List:
-                        result = "*(int*)(l_get(" + id + "," + VisitExpression(context.tail()[0].expression()) + "))";
+                        result = "*(("+_listTable[id]+"*)l_get(" + id + "," + VisitExpression(context.tail()[0].expression()) + "))";
                         break;
                     //Tuples and Maps
                     case FType.Function:
@@ -242,7 +251,7 @@ namespace ProjectF
             if (context.parameters() != null) {
                 parameters = VisitParameters(context.parameters());
             }
-            var name = "func" + (functions.Count + 1).ToString();
+            var name = "_func" + (functions.Count + 1).ToString();
             var function = GetCType(context.type().GetText()) + " " + name + " " + "(" + parameters + ")" + VisitBody(context.body());
             functions.Add(function);
             functionCast.Add(name, "(" + GetCType(context.type().GetText()) + "(*)" + "(" + GetParameterTypes(context.parameters()) + ")" + ")");
@@ -329,6 +338,37 @@ namespace ProjectF
                 return VisitDeclaration(context.declaration());
             }
             return "";
+        }
+
+        public override string VisitList([NotNull] ProjectFParser.ListContext context)
+        {
+            string listGenerator = "";
+            var currentListName = listVarNames.Pop();
+            var currentListType = _listTable[currentListName];
+            foreach (var expr in context.expressions()?.expression())
+            {
+                var varName = "_ptr" + (varCount++).ToString();
+                listGenerator += "void *" + varName + " = malloc(sizeof(" + currentListType + "));\r\n";
+                listGenerator += "*(("+ currentListType +" *)" + varName + " = " + VisitExpression(expr) + ";\r\n";
+                listGenerator += "l_put(head, " + varName + ");\r\n";
+            }
+            initializers.Push(listGenerator);
+            return "l_createEmptyList()";
+        }
+
+        public override string VisitAssignmentOrCall([NotNull] ProjectFParser.AssignmentOrCallContext context)
+        {
+            var result = VisitSecondary(context.secondary());
+            if(context.expression() != null)
+            {
+                result += " = " + VisitExpression(context.expression());
+            }
+            return result;
+        }
+
+        public override string VisitConditional([NotNull] ProjectFParser.ConditionalContext context)
+        {
+            return base.VisitConditional(context);
         }
     }
 }
