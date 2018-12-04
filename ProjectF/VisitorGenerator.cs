@@ -236,8 +236,11 @@ namespace ProjectF
                             result = "(" + functionCast[fname] + id + ")(" + VisitExpressions(context.tail()[0].expressions()) + ");";
                          } else
                         {
-                            var fname = varFunction[id];
-                            varFunction.Add(funcVarNames.Pop(), fname);
+                            var funVarName = funcVarNames.Pop();
+                            if (!varFunction.Keys.Contains(funVarName)) {
+                                var fname = varFunction[id];
+                                varFunction.Add(funVarName, fname);
+                             }
                         }
                         break;
                     case FType.PrintFucntion:
@@ -362,6 +365,9 @@ namespace ProjectF
                     break;
                 case "real":
                     ftype = "float";
+                    break;
+                case "func()":
+                    ftype = "void *";
                     break;
             }
             if(ftype[0] == '(' && ftype[ftype.Length - 1] == ')')
