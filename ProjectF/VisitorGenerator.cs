@@ -146,6 +146,13 @@ namespace ProjectF
             if (context.relationOp() != null)
             {
                 var op = context.relationOp().GetText();
+                if(op == "=")
+                {
+                    op = "==";
+                }else if (op == "/=")
+                {
+                    op = "!=";
+                }
                 result += op + VisitFactor(context.factor()[1]);
             }
             return result;
