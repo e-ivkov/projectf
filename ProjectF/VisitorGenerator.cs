@@ -18,7 +18,7 @@ namespace ProjectF
             Complex,
             Real,
             Rational,
-            SystemFucntion,
+            PrintFucntion,
             Function,
             Tuple,
             Map,
@@ -40,7 +40,7 @@ namespace ProjectF
 
         public override string VisitProgram([NotNull] ProjectFParser.ProgramContext context)
         {
-            _symbolTable.Add("print", FType.SystemFucntion);
+            _symbolTable.Add("print", FType.PrintFucntion);
             string children = VisitChildren(context);
 
             
@@ -170,7 +170,7 @@ namespace ProjectF
                     var second = VisitTerm(context.term()[1]);
                     if (_symbolTable.ContainsKey(second) && _symbolTable[second] == FType.List)
                     {
-                        result = "l_concatinate(" + result + "," + second + ");";
+                        result = "l_concatenate(" + result + "," + second + ");";
                     }
                     else
                     {
@@ -221,7 +221,10 @@ namespace ProjectF
                 switch (_symbolTable[id])
                 {
                     case FType.List:
-                        result = "*(("+_listTable[id]+"*)l_get(" + id + "," + VisitExpression(context.tail()[0].expression()) + "));";
+                        if (context.tail().Length > 0)
+                            result = "*((" + _listTable[id] + "*)l_get(" + id + "," + VisitExpression(context.tail()[0].expression()) + "));";
+                        else
+                            result = id;
                         break;
                     //TODO: Tuples and Maps
                     case FType.Function: 
@@ -235,7 +238,7 @@ namespace ProjectF
                             varFunction.Add(funcVarNames.Pop(), fname);
                         }
                         break;
-                    case FType.SystemFucntion:
+                    case FType.PrintFucntion:
                         var exType = DetectExpressionType(context.tail()[0].expressions().expression()[0]);
                         switch (exType)
                         {
@@ -252,7 +255,7 @@ namespace ProjectF
                                 break;
                             case FType.Rational:
                                 break;
-                            case FType.SystemFucntion:
+                            case FType.PrintFucntion:
                                 break;
                             case FType.Function:
                                 break;
