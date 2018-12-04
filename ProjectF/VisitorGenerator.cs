@@ -154,6 +154,22 @@ namespace ProjectF
         public override string VisitFactor([NotNull] ProjectFParser.FactorContext context)
         {
             var result = VisitTerm(context.term()[0]);
+            if (_symbolTable.ContainsKey(result) && _symbolTable[result] == FType.List) {
+                if (context.term().Length > 1)
+                {
+                    var second = VisitTerm(context.term()[1]);
+                    if (_symbolTable.ContainsKey(second) && _symbolTable[second] == FType.List)
+                    {
+                        result = "l_concatinate(" + result + "," + second + ");";
+                    }
+                    else
+                    {
+                        result = "l_put(" + result + "," + second + ");";
+                    }
+                    return result;
+                }
+            }
+
             for(int i = 0; i < context.factorOp().Length; i++)
             {
                 var op = context.factorOp()[i].GetText();
@@ -422,12 +438,17 @@ namespace ProjectF
             string listGenerator = "";
             var currentListName = listVarNames.Pop();
             var currentListType = _listTable[currentListName];
-            foreach (var expr in context.expressions()?.expression())
+            if (context?.expressions()?.expression() != null)
             {
-                var varName = "_ptr" + (varCount++).ToString();
-                listGenerator += "void *" + varName + " = malloc(sizeof(" + currentListType + "));\r\n";
-                listGenerator += "(*(("+ currentListType +" *)" + varName + ")) = " + VisitExpression(expr) + ";\r\n";
-                listGenerator += "l_put(head, " + varName + ");\r\n";
+
+
+                foreach (var expr in context.expressions()?.expression())
+                {
+                    var varName = "_ptr" + (varCount++).ToString();
+                    listGenerator += "void *" + varName + " = malloc(sizeof(" + currentListType + "));\r\n";
+                    listGenerator += "(*((" + currentListType + " *)" + varName + ")) = " + VisitExpression(expr) + ";\r\n";
+                    listGenerator += "l_put(head, " + varName + ");\r\n";
+                }
             }
             initializers.Push(listGenerator);
             return "l_createEmptyList()";
