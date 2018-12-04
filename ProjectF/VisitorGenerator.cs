@@ -174,7 +174,11 @@ namespace ProjectF
                     }
                     else
                     {
-                        result = "l_put(" + result + "," + second + ");";
+                        //var varName = "_ptr" + (varCount++).ToString();
+                        //var currentListType = _listTable[result];
+                        //var listGenerator = "void *" + varName + " = malloc(sizeof(" + currentListType + "));\r\n";
+                        
+                        //result = listGenerator + "l_add_element(" + result + "," + varName + ");";
                     }
                     return result;
                 }
