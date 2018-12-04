@@ -30,6 +30,7 @@ namespace ProjectF
         private List<string> functions = new List<string>();
         private Dictionary<string, string> functionCast = new Dictionary<string, string>();
         private Dictionary<string, string> varFunction = new Dictionary<string, string>();
+        private Stack<string> initializers= new Stack<string>();
 
         public override string VisitProgram([NotNull] ProjectFParser.ProgramContext context)
         {
@@ -93,14 +94,19 @@ namespace ProjectF
             }
             if (type[0] == '(' && type[type.Length-1] == ')')
             {
+                _listTable.Add(name, GetCType(type.Substring(1, type.Length - 2)));
                 type = "struct Node*";
                 ftype = FType.List;
-                _listTable.Add(name, type.Substring(1, type.Length - 1));
             }
             _symbolTable.Add(name, ftype);
             var expression = VisitExpression(context.expression());
             varFunction.Add(name, expression.Substring(1));
-            return type + " " + name + " = " + expression + ";\r\n";
+            var result = type + " " + name + " = " + expression + ";\r\n";
+            if(ftype == FType.List)
+            {
+                result += initializers.Pop().Replace("head", name);
+            }
+            return result;
         }
 
         public override string VisitExpression([NotNull] ProjectFParser.ExpressionContext context)
@@ -179,7 +185,7 @@ namespace ProjectF
                 switch (_symbolTable[id])
                 {
                     case FType.List:
-                        result = "*(int*)(l_get(" + id + "," + VisitExpression(context.tail()[0].expression()) + "))";
+                        result = "*(("+_listTable[id]+"*)l_get(" + id + "," + VisitExpression(context.tail()[0].expression()) + "))";
                         break;
                     //Tuples and Maps
                     case FType.Function:
@@ -330,5 +336,18 @@ namespace ProjectF
             }
             return "";
         }
+
+        public override string VisitList([NotNull] ProjectFParser.ListContext context)
+        {
+            string listGenerator = "";
+            foreach(var expr in context.expressions()?.expression())
+            {
+                listGenerator += "l_put(head, (void *)" + VisitExpression(expr) + ");\r\n";
+            }
+            initializers.Push(listGenerator);
+            return "l_createEmptyList()";
+        }
+
+
     }
 }
