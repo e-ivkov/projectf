@@ -1,6 +1,7 @@
 ﻿using Antlr4.Runtime;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,18 +10,22 @@ namespace ProjectF
 {
     class Program
     {
-        static void Main(string[] args){
-            AntlrInputStream inputStream = new AntlrInputStream("f1: func() is func(p:integer): integer => p+1;" +
-                "b: integer is -10;"+
-                "a: integer is f1(b)");
+
+        static void Main(string[] args) {
+            string inputCode = System.IO.File.ReadAllText(@"input_code.f");
+            AntlrInputStream inputStream = new AntlrInputStream(inputCode);
             ProjectFLexer fLexer = new ProjectFLexer(inputStream);
             CommonTokenStream commonTokenStream = new CommonTokenStream(fLexer);
             ProjectFParser fParser = new ProjectFParser(commonTokenStream);
-
             var programContext = fParser.program();
             VisitorGenerator visitor = new VisitorGenerator();
-            Console.WriteLine(visitor.Visit(programContext));
-            Console.ReadLine();
+            string[] output_c_code = { visitor.Visit(programContext)};
+            System.IO.File.WriteAllLines(@"output.c", output_c_code);
+           // Console.ReadLine();
+            var gcc = Process.Start("gcc.exe", "output.c -o a.exe");
+            gcc.WaitForExit();
+           Process.Start("a.exe");
+
         }
     }
 }

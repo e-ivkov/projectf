@@ -41,6 +41,7 @@ void print_string(char* value){
         symbol = value[i];
     }
 }
+/*
 main(int argc, char const *argv[])
 {
     print_float(1.2);
@@ -53,3 +54,4 @@ main(int argc, char const *argv[])
     printf("\n");
     print_string("HAHHA");
 }
+*/

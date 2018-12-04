@@ -18,6 +18,7 @@ namespace ProjectF
             Complex,
             Real,
             Rational,
+            SystemFucntion,
             Function,
             Tuple,
             Map,
@@ -25,29 +26,38 @@ namespace ProjectF
             Bool
         }
 
+        public string entry_point = "f_main";
+
         private Dictionary<string, FType> _symbolTable = new Dictionary<string, FType>();
         private Dictionary<string, string> _listTable = new Dictionary<string, string>();
         private List<string> functions = new List<string>();
         private Dictionary<string, string> functionCast = new Dictionary<string, string>();
         private Dictionary<string, string> varFunction = new Dictionary<string, string>();
+        private Stack<string> initializers = new Stack<string>();
+        private Stack<string> listVarNames = new Stack<string>();
+        private int varCount = 0;
 
         public override string VisitProgram([NotNull] ProjectFParser.ProgramContext context)
         {
-            string children = "";
+            _symbolTable.Add("print", FType.SystemFucntion);
+            string children = VisitChildren(context);
+
+            
             /*foreach(var decl in context.declaration())
             {
                 children += VisitDeclaration(decl);
             }*/
-            foreach (var decl in context.declaration())
-            {
-                children += VisitDeclaration(decl);
-            }
+            //foreach (var decl in context.declaration())
+            //{
+            //    children += VisitDeclaration(decl);
+            //}
             var addFunctions = "";
             foreach (var func in functions)
             {
                 addFunctions += func + "\r\n";
             }
-            return addFunctions + "main(){\r\n" + children + "}";
+            var cFunctions = "#include \"list.c\"\r\n#include \"print.c\"\r\n";
+            return cFunctions + addFunctions + "int main(int argc, char const *argv[]){\r\n" + children + "\r\n char temp; \r\n scanf (\"press any key\", &temp);\r\n"+ "return 0;\r\n }";
         }
 
         public override string VisitChildren([NotNull] IRuleNode node)
@@ -68,6 +78,7 @@ namespace ProjectF
         public override string VisitDeclaration([NotNull] ProjectFParser.DeclarationContext context)
         {
             var name = context.variable().GetText();
+            var outName = name;
             var type = context.type().GetText();
             var ftype = FType.Bool;
             switch (type)
@@ -77,8 +88,7 @@ namespace ProjectF
                     ftype = FType.Integer;
                     break;
                 case "string":
-                    type = "char";
-                    name += "[]";
+                    type = "char*";
                     ftype = FType.String;
                     break;
                 case "real":
@@ -93,14 +103,20 @@ namespace ProjectF
             }
             if (type[0] == '(' && type[type.Length-1] == ')')
             {
+                _listTable.Add(name, GetCType(type.Substring(1, type.Length - 2)));
+                listVarNames.Push(name);
                 type = "struct Node*";
                 ftype = FType.List;
-                _listTable.Add(name, type.Substring(1, type.Length - 1));
             }
             _symbolTable.Add(name, ftype);
             var expression = VisitExpression(context.expression());
             varFunction.Add(name, expression.Substring(1));
-            return type + " " + name + " = " + expression + ";\r\n";
+            var result = type + " " + outName + " = " + expression + ";\r\n";
+            if(ftype == FType.List)
+            {
+                result += initializers.Pop().Replace("head", name);
+            }
+            return result;
         }
 
         public override string VisitExpression([NotNull] ProjectFParser.ExpressionContext context)
@@ -179,14 +195,49 @@ namespace ProjectF
                 switch (_symbolTable[id])
                 {
                     case FType.List:
-                        result = "*(int*)(l_get(" + id + "," + VisitExpression(context.tail()[0].expression()) + "))";
+                        result = "*(("+_listTable[id]+"*)l_get(" + id + "," + VisitExpression(context.tail()[0].expression()) + "));";
                         break;
                     //Tuples and Maps
                     case FType.Function:
                         var fname = varFunction[id];
-                        result = "(" + functionCast[fname] + id + ")(" + VisitExpressions(context.tail()[0].expressions()) +")";
+                        result = "(" + functionCast[fname] + id + ")(" + VisitExpressions(context.tail()[0].expressions()) +");";
                         break;
                     //func call
+                    case FType.SystemFucntion:
+                        var exType = DetectExpressionType(context.tail()[0].expressions().expression()[0]);
+                        switch (exType)
+                        {
+                            case FType.String:
+                                result = "print_string(" + VisitExpressions(context.tail()[0].expressions()) + ");";
+                                break;
+                            case FType.Integer:
+                                result = "print_int(" + VisitExpressions(context.tail()[0].expressions()) + ");";
+                                break;
+                            case FType.Complex:
+                                break;
+                            case FType.Real:
+                                result = "print_float(" + VisitExpressions(context.tail()[0].expressions()) + ");";
+                                break;
+                            case FType.Rational:
+                                break;
+                            case FType.SystemFucntion:
+                                break;
+                            case FType.Function:
+                                break;
+                            case FType.Tuple:
+                                break;
+                            case FType.Map:
+                                break;
+                            case FType.List:
+                                break;
+                            case FType.Bool:
+                                result = "print_bool(" + VisitExpressions(context.tail()[0].expressions()) + ");";
+                                break;
+                            default:
+                                break;
+                        }
+                        break;
+
                 }
             }
             if (result == "")
@@ -209,6 +260,14 @@ namespace ProjectF
                 expressions += VisitExpression(expr) + ",";
             }
             return expressions.Substring(0, expressions.Length - 1);
+        }
+
+        private FType DetectExpressionType([NotNull] ProjectFParser.ExpressionContext context)
+        {
+            var elementary = context.relation()[0].factor()[0].term()[0].unary()[0].secondary().primary().elementary();
+            Console.WriteLine(elementary.GetText());
+            return _symbolTable[elementary.Identifier().GetText()];
+            
         }
 
         public override string VisitPrimary([NotNull] ProjectFParser.PrimaryContext context)
@@ -242,7 +301,7 @@ namespace ProjectF
             if (context.parameters() != null) {
                 parameters = VisitParameters(context.parameters());
             }
-            var name = "func" + (functions.Count + 1).ToString();
+            var name = "_func" + (functions.Count + 1).ToString();
             var function = GetCType(context.type().GetText()) + " " + name + " " + "(" + parameters + ")" + VisitBody(context.body());
             functions.Add(function);
             functionCast.Add(name, "(" + GetCType(context.type().GetText()) + "(*)" + "(" + GetParameterTypes(context.parameters()) + ")" + ")");
@@ -263,19 +322,29 @@ namespace ProjectF
                     ftype = "float";
                     break;
             }
+            if(ftype[0] == '(' && ftype[ftype.Length - 1] == ')')
+            {
+                ftype = "struct Node*";
+
+            }
             return ftype;
         }
 
         public string GetParameterTypes(ProjectFParser.ParametersContext context)
         {
             var types = "";
-            foreach(var type in context?.type())
+            if (context?.type() != null)
             {
-                types += GetCType(type.GetText()) + ",";
-            }
-            types = types.Substring(0, types.Length - 1);
+                foreach (var type in context?.type())
+                {
+                    types += GetCType(type.GetText()) + ",";
+                }
+                types = types.Substring(0, types.Length - 1);
+             }
             return types;
         }
+
+
 
         public override string VisitParameters([NotNull] ProjectFParser.ParametersContext context)
         {
@@ -283,6 +352,23 @@ namespace ProjectF
             for (int i = 0; i < context?.type().Length; i++)
             {
                 parameters += GetCType(context?.type()[i].GetText()) + " " + context?.variable()[i].GetText() + ",";
+                FType ftype = FType.Bool;
+                switch (GetCType(context?.type()[i].GetText()))
+                {
+                    case "int":
+                        ftype = FType.Integer;
+                        break;
+                    case "char*":
+                        ftype = FType.String;
+                        break;
+                    case "float":
+                        ftype = FType.Real;
+                        break;
+                    case "struct Node*":
+                        ftype = FType.List;
+                        break;
+                }
+                _symbolTable.Add(context?.variable()[i].GetText(), ftype);
             }
             parameters = parameters.Substring(0, parameters.Length - 1);
             return parameters;
@@ -329,6 +415,43 @@ namespace ProjectF
                 return VisitDeclaration(context.declaration());
             }
             return "";
+        }
+
+        public override string VisitList([NotNull] ProjectFParser.ListContext context)
+        {
+            string listGenerator = "";
+            var currentListName = listVarNames.Pop();
+            var currentListType = _listTable[currentListName];
+            foreach (var expr in context.expressions()?.expression())
+            {
+                var varName = "_ptr" + (varCount++).ToString();
+                listGenerator += "void *" + varName + " = malloc(sizeof(" + currentListType + "));\r\n";
+                listGenerator += "*(("+ currentListType +" *)" + varName + " = " + VisitExpression(expr) + ";\r\n";
+                listGenerator += "l_put(head, " + varName + ");\r\n";
+            }
+            initializers.Push(listGenerator);
+            return "l_createEmptyList()";
+        }
+
+        public override string VisitAssignmentOrCall([NotNull] ProjectFParser.AssignmentOrCallContext context)
+        {
+            var result = VisitSecondary(context.secondary());
+            if(context.expression() != null)
+            {
+                result += " = " + VisitExpression(context.expression()) + ";";
+            }
+            return result;
+        }
+
+        public override string VisitConditional([NotNull] ProjectFParser.ConditionalContext context)
+        {
+            var result = "if(" + VisitExpression(context.expression()) + "){\r\n" +
+                VisitStatements(context.statements()[0]) + "}\r\n";
+            if(context.statements().Length > 1)
+            {
+                result += "else{\r\n" + VisitStatements(context.statements()[1]) + "}\r\n";
+            }
+            return result;
         }
     }
 }
