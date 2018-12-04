@@ -23,7 +23,8 @@ namespace ProjectF
             Tuple,
             Map,
             List,
-            Bool
+            Bool,
+            LenFunction
         }
 
         public string entry_point = "f_main";
@@ -41,6 +42,7 @@ namespace ProjectF
         public override string VisitProgram([NotNull] ProjectFParser.ProgramContext context)
         {
             _symbolTable.Add("print", FType.PrintFucntion);
+            _symbolTable.Add("len", FType.LenFunction);
             string children = VisitChildren(context);
 
             
@@ -238,8 +240,11 @@ namespace ProjectF
                             result = "(" + functionCast[fname] + id + ")(" + VisitExpressions(context.tail()[0].expressions()) + ");";
                          } else
                         {
-                            var fname = varFunction[id];
-                            varFunction.Add(funcVarNames.Pop(), fname);
+                            var funVarName = funcVarNames.Pop();
+                            if (!varFunction.Keys.Contains(funVarName)) {
+                                var fname = varFunction[id];
+                                varFunction.Add(funVarName, fname);
+                             }
                         }
                         break;
                     case FType.PrintFucntion:
@@ -276,7 +281,9 @@ namespace ProjectF
                                 break;
                         }
                         break;
-
+                    case FType.LenFunction:
+                        result = "l_length(" + VisitExpressions(context.tail()[0].expressions()) + ");";
+                        break;
                 }
             }
             if (result == "")
@@ -362,6 +369,9 @@ namespace ProjectF
                     break;
                 case "real":
                     ftype = "float";
+                    break;
+                case "func()":
+                    ftype = "void *";
                     break;
             }
             if(ftype[0] == '(' && ftype[ftype.Length - 1] == ')')
