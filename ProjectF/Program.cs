@@ -10,6 +10,7 @@ namespace ProjectF
 {
     class Program
     {
+
         static void Main(string[] args) {
             string inputCode = System.IO.File.ReadAllText(@"input_code.f");
             AntlrInputStream inputStream = new AntlrInputStream(inputCode);
@@ -18,9 +19,13 @@ namespace ProjectF
             ProjectFParser fParser = new ProjectFParser(commonTokenStream);
             var programContext = fParser.program();
             VisitorGenerator visitor = new VisitorGenerator();
-            string[] output_c_code = { visitor.Visit(programContext) };
+            string[] output_c_code = { visitor.Visit(programContext)};
             System.IO.File.WriteAllLines(@"output.c", output_c_code);
-            Process.Start("gcc.exe", "output.c -o a.exe");
+           // Console.ReadLine();
+            var gcc = Process.Start("gcc.exe", "output.c -o a.exe");
+            gcc.WaitForExit();
+           Process.Start("a.exe");
+
         }
     }
 }

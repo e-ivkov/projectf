@@ -1,7 +1,7 @@
 grammar ProjectF;
 
 program
-   : declaration (';' declaration)* EOF
+   : (declaration|statement)  (';' (declaration|statement))* (';')? EOF
    ;
 
 declaration
@@ -12,7 +12,7 @@ variable
    : Identifier;
 
 expressions
-   : expression (',' expression)*
+   : expression (',' expression)* 
    ;
 
 logicalOp
@@ -126,7 +126,7 @@ type
    ;
 
 statements
-   : statement (';' statement)*
+   : statement (';' statement)* (';')?
    ;
 
 statement
