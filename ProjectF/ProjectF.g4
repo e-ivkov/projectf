@@ -12,7 +12,7 @@ variable
    : Identifier;
 
 expressions
-   : expression (',' expression)*
+   : expression (',' expression)* 
    ;
 
 logicalOp
@@ -126,7 +126,7 @@ type
    ;
 
 statements
-   : statement (';' statement)*
+   : statement (';' statement)* (';')?
    ;
 
 statement

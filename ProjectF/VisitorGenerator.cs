@@ -426,7 +426,7 @@ namespace ProjectF
             {
                 var varName = "_ptr" + (varCount++).ToString();
                 listGenerator += "void *" + varName + " = malloc(sizeof(" + currentListType + "));\r\n";
-                listGenerator += "*(("+ currentListType +" *)" + varName + " = " + VisitExpression(expr) + ";\r\n";
+                listGenerator += "(*(("+ currentListType +" *)" + varName + ")) = " + VisitExpression(expr) + ";\r\n";
                 listGenerator += "l_put(head, " + varName + ");\r\n";
             }
             initializers.Push(listGenerator);
