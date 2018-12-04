@@ -23,7 +23,8 @@ namespace ProjectF
             Tuple,
             Map,
             List,
-            Bool
+            Bool,
+            LenFunction
         }
 
         public string entry_point = "f_main";
@@ -41,6 +42,7 @@ namespace ProjectF
         public override string VisitProgram([NotNull] ProjectFParser.ProgramContext context)
         {
             _symbolTable.Add("print", FType.PrintFucntion);
+            _symbolTable.Add("len", FType.LenFunction);
             string children = VisitChildren(context);
 
             
@@ -272,7 +274,9 @@ namespace ProjectF
                                 break;
                         }
                         break;
-
+                    case FType.LenFunction:
+                        result = "l_length(" + VisitExpressions(context.tail()[0].expressions()) + ");";
+                        break;
                 }
             }
             if (result == "")
