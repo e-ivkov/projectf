@@ -108,7 +108,7 @@ mapElement
    ;
 
 list
-   : '(' expressions? ')'
+   : '(' (expressions)? ')'
    ;
 
 type
