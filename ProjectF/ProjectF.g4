@@ -146,9 +146,17 @@ conditional
    : 'if' expression 'then' statements ('else' statements)? 'end'
    ;
 
+whileloop
+	: ('while' expression) loopbody
+	;
+
+forloop
+	: 'for' (variable 'in')? expression ('..' expression) loopbody
+	;
+
 loop
-   : 'for' (Identifier 'in')? expression ('..' expression) loopbody
-   | ('while' expression) loopbody
+   : forloop
+   | whileloop
    ;
 
 loopbody

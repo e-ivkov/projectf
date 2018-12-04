@@ -403,5 +403,24 @@ namespace ProjectF
             }
             return result;
         }
+
+        public override string VisitWhileloop([NotNull] ProjectFParser.WhileloopContext context)
+        {
+            var result = "while(" + VisitExpression(context.expression()) + ")";
+            if(context.loopbody() != null)
+            {
+                result += "{\r\n" + VisitLoopbody(context.loopbody()) + "}";
+            }
+            else
+            {
+                result += "{}";
+            }
+            return result;
+        }
+
+        public override string VisitLoopbody([NotNull] ProjectFParser.LoopbodyContext context)
+        {
+            return VisitChildren(context);
+        }
     }
 }
