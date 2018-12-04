@@ -118,6 +118,7 @@ type
    |    'rational'
    |    'complex'
    |    'string'
+   |	'void'
    |    'func' '(' (type (',' type)*)? ')' (':' type)?
    |    '{}'
    |    '[' type ':' type ']'
@@ -257,5 +258,5 @@ Letter
 
 
 WS
-	:	' ' -> channel(HIDDEN)
+	: [ \t\r\n]+ -> channel(HIDDEN)
 	;

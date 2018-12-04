@@ -313,11 +313,16 @@ namespace ProjectF
                     ftype = "int";
                     break;
                 case "string":
-                    ftype = "char*";
+                    ftype = "char[]";
                     break;
                 case "real":
                     ftype = "float";
                     break;
+            }
+            if(ftype[0] == '(' && ftype[ftype.Length - 1] == ')')
+            {
+                ftype = "struct Node*";
+
             }
             return ftype;
         }
@@ -325,13 +330,18 @@ namespace ProjectF
         public string GetParameterTypes(ProjectFParser.ParametersContext context)
         {
             var types = "";
-            foreach(var type in context?.type())
+            if (context?.type() != null)
             {
-                types += GetCType(type.GetText()) + ",";
-            }
-            types = types.Substring(0, types.Length - 1);
+                foreach (var type in context?.type())
+                {
+                    types += GetCType(type.GetText()) + ",";
+                }
+                types = types.Substring(0, types.Length - 1);
+             }
             return types;
         }
+
+
 
         public override string VisitParameters([NotNull] ProjectFParser.ParametersContext context)
         {
@@ -339,6 +349,23 @@ namespace ProjectF
             for (int i = 0; i < context?.type().Length; i++)
             {
                 parameters += GetCType(context?.type()[i].GetText()) + " " + context?.variable()[i].GetText() + ",";
+                FType ftype = FType.Bool;
+                switch (GetCType(context?.type()[i].GetText()))
+                {
+                    case "int":
+                        ftype = FType.Integer;
+                        break;
+                    case "char[]":
+                        ftype = FType.String;
+                        break;
+                    case "float":
+                        ftype = FType.Real;
+                        break;
+                    case "struct Node*":
+                        ftype = FType.List;
+                        break;
+                }
+                _symbolTable.Add(context?.variable()[i].GetText(), ftype);
             }
             parameters = parameters.Substring(0, parameters.Length - 1);
             return parameters;
@@ -408,14 +435,20 @@ namespace ProjectF
             var result = VisitSecondary(context.secondary());
             if(context.expression() != null)
             {
-                result += " = " + VisitExpression(context.expression());
+                result += " = " + VisitExpression(context.expression()) + ";";
             }
             return result;
         }
 
         public override string VisitConditional([NotNull] ProjectFParser.ConditionalContext context)
         {
-            return base.VisitConditional(context);
+            var result = "if(" + VisitExpression(context.expression()) + "){\r\n" +
+                VisitStatements(context.statements()[0]) + "}\r\n";
+            if(context.statements().Length > 1)
+            {
+                result += "else{\r\n" + VisitStatements(context.statements()[1]) + "}\r\n";
+            }
+            return result;
         }
     }
 }
