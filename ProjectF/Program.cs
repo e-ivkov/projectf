@@ -10,19 +10,16 @@ namespace ProjectF
     class Program
     {
         static void Main(string[] args){
-            AntlrInputStream inputStream = new AntlrInputStream("f1: func() is func(p:integer): integer => p+1;" +
-                "b: integer is -10;"+
-                "a: integer is f1(b);" +
-                "c: (integer) is (1,2,3);" +
-                "item: integer is c[1]");
+            string inputCode = System.IO.File.ReadAllText(@"input_code.txt");
+            AntlrInputStream inputStream = new AntlrInputStream(inputCode);
             ProjectFLexer fLexer = new ProjectFLexer(inputStream);
             CommonTokenStream commonTokenStream = new CommonTokenStream(fLexer);
             ProjectFParser fParser = new ProjectFParser(commonTokenStream);
-
             var programContext = fParser.program();
             VisitorGenerator visitor = new VisitorGenerator();
-            Console.WriteLine(visitor.Visit(programContext));
-            Console.ReadLine();
+            output_c_code = visitor.Visit(programContext);
+            System.IO.File.WriteAllLines(@"output.c", output_c_code);
+            Process.Start("gcc.exe", "output.c -o a.exe");
         }
     }
 }
