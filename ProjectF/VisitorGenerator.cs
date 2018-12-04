@@ -26,7 +26,7 @@ namespace ProjectF
             Bool
         }
 
-  
+        public string entry_point = "f_main";
 
         private Dictionary<string, FType> _symbolTable = new Dictionary<string, FType>();
         private Dictionary<string, string> _listTable = new Dictionary<string, string>();
@@ -39,23 +39,25 @@ namespace ProjectF
 
         public override string VisitProgram([NotNull] ProjectFParser.ProgramContext context)
         {
-            string children = "";
-
             _symbolTable.Add("print", FType.SystemFucntion);
+            string children = VisitChildren(context);
+
+            
             /*foreach(var decl in context.declaration())
             {
                 children += VisitDeclaration(decl);
             }*/
-            foreach (var decl in context.declaration())
-            {
-                children += VisitDeclaration(decl);
-            }
+            //foreach (var decl in context.declaration())
+            //{
+            //    children += VisitDeclaration(decl);
+            //}
             var addFunctions = "";
             foreach (var func in functions)
             {
                 addFunctions += func + "\r\n";
             }
-            return addFunctions + "main(){\r\n" + children + "}";
+            var cFunctions = "#include \"list.c\"\r\n#include \"print.c\"\r\n";
+            return cFunctions + addFunctions + "int main(int argc, char const *argv[]){\r\n" + children + "\r\n char temp; \r\n scanf (\"press any key\", &temp);\r\n"+ "return 0;\r\n }";
         }
 
         public override string VisitChildren([NotNull] IRuleNode node)
@@ -76,6 +78,7 @@ namespace ProjectF
         public override string VisitDeclaration([NotNull] ProjectFParser.DeclarationContext context)
         {
             var name = context.variable().GetText();
+            var outName = name;
             var type = context.type().GetText();
             var ftype = FType.Bool;
             switch (type)
@@ -85,8 +88,7 @@ namespace ProjectF
                     ftype = FType.Integer;
                     break;
                 case "string":
-                    type = "char";
-                    name += "[]";
+                    type = "char*";
                     ftype = FType.String;
                     break;
                 case "real":
@@ -109,7 +111,7 @@ namespace ProjectF
             _symbolTable.Add(name, ftype);
             var expression = VisitExpression(context.expression());
             varFunction.Add(name, expression.Substring(1));
-            var result = type + " " + name + " = " + expression + ";\r\n";
+            var result = type + " " + outName + " = " + expression + ";\r\n";
             if(ftype == FType.List)
             {
                 result += initializers.Pop().Replace("head", name);
@@ -193,12 +195,12 @@ namespace ProjectF
                 switch (_symbolTable[id])
                 {
                     case FType.List:
-                        result = "*(("+_listTable[id]+"*)l_get(" + id + "," + VisitExpression(context.tail()[0].expression()) + "))";
+                        result = "*(("+_listTable[id]+"*)l_get(" + id + "," + VisitExpression(context.tail()[0].expression()) + "));";
                         break;
                     //Tuples and Maps
                     case FType.Function:
                         var fname = varFunction[id];
-                        result = "(" + functionCast[fname] + id + ")(" + VisitExpressions(context.tail()[0].expressions()) +")";
+                        result = "(" + functionCast[fname] + id + ")(" + VisitExpressions(context.tail()[0].expressions()) +");";
                         break;
                     //func call
                     case FType.SystemFucntion:
@@ -206,15 +208,15 @@ namespace ProjectF
                         switch (exType)
                         {
                             case FType.String:
-                                result = "print_string(" + VisitExpressions(context.tail()[0].expressions()) + ")";
+                                result = "print_string(" + VisitExpressions(context.tail()[0].expressions()) + ");";
                                 break;
                             case FType.Integer:
-                                result = "print_int(" + VisitExpressions(context.tail()[0].expressions()) + ")";
+                                result = "print_int(" + VisitExpressions(context.tail()[0].expressions()) + ");";
                                 break;
                             case FType.Complex:
                                 break;
                             case FType.Real:
-                                result = "print_float(" + VisitExpressions(context.tail()[0].expressions()) + ")";
+                                result = "print_float(" + VisitExpressions(context.tail()[0].expressions()) + ");";
                                 break;
                             case FType.Rational:
                                 break;
@@ -229,7 +231,7 @@ namespace ProjectF
                             case FType.List:
                                 break;
                             case FType.Bool:
-                                result = "print_bool(" + VisitExpressions(context.tail()[0].expressions()) + ")";
+                                result = "print_bool(" + VisitExpressions(context.tail()[0].expressions()) + ");";
                                 break;
                             default:
                                 break;
@@ -263,6 +265,7 @@ namespace ProjectF
         private FType DetectExpressionType([NotNull] ProjectFParser.ExpressionContext context)
         {
             var elementary = context.relation()[0].factor()[0].term()[0].unary()[0].secondary().primary().elementary();
+            Console.WriteLine(elementary.GetText());
             return _symbolTable[elementary.Identifier().GetText()];
             
         }
@@ -313,7 +316,7 @@ namespace ProjectF
                     ftype = "int";
                     break;
                 case "string":
-                    ftype = "char[]";
+                    ftype = "char*";
                     break;
                 case "real":
                     ftype = "float";
@@ -355,7 +358,7 @@ namespace ProjectF
                     case "int":
                         ftype = FType.Integer;
                         break;
-                    case "char[]":
+                    case "char*":
                         ftype = FType.String;
                         break;
                     case "float":

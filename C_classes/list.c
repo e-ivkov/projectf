@@ -132,6 +132,7 @@ void l_for_loop(struct Node *head)
         node = node->next;
     }
 }
+/*
 main(int argc, char const *argv[])
 {
     struct Node *head = l_createEmptyList();
@@ -169,3 +170,4 @@ main(int argc, char const *argv[])
     printf("GET out of range element: %d", (int *)(l_get(result, 5)));
     return 0;
 }
+*/

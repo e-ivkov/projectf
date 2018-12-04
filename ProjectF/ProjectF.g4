@@ -1,7 +1,7 @@
 grammar ProjectF;
 
 program
-   : declaration (';' declaration)* EOF
+   : (declaration|statement)  (';' (declaration|statement))* (';')? EOF
    ;
 
 declaration
