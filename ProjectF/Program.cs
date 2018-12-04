@@ -10,15 +10,16 @@ namespace ProjectF
     class Program
     {
         static void Main(string[] args){
-            AntlrInputStream inputStream = new AntlrInputStream("a: integer is 777");
+            string inputCode = System.IO.File.ReadAllText(@"input_code.txt");
+            AntlrInputStream inputStream = new AntlrInputStream(inputCode);
             ProjectFLexer fLexer = new ProjectFLexer(inputStream);
             CommonTokenStream commonTokenStream = new CommonTokenStream(fLexer);
             ProjectFParser fParser = new ProjectFParser(commonTokenStream);
-
             var programContext = fParser.program();
             VisitorGenerator visitor = new VisitorGenerator();
-            Console.WriteLine(visitor.Visit(programContext));
-            Console.ReadLine();
+            output_c_code = visitor.Visit(programContext);
+            System.IO.File.WriteAllLines(@"output.c", output_c_code);
+            Process.Start("gcc.exe", "output.c -o a.exe");
         }
     }
 }

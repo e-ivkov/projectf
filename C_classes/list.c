@@ -31,7 +31,6 @@ struct Node *l_createEmptyList()
     new_node->index = -1;
     return new_node;
 }
-
 void l_put(struct Node *head, void *element)
 {
     struct Node *new_node = (struct Node *)malloc(sizeof(struct Node));
@@ -53,6 +52,22 @@ void l_put(struct Node *head, void *element)
         new_node->index = node->index + 1;
     }
 }
+
+/*struct Node *l_createList_with_array(void* arr)
+{
+    struct Node *new_node = (struct Node *)malloc(sizeof(struct Node));
+    new_node->next = NULL;
+    new_node->data = NULL;
+    new_node->index = -1;
+    for (int i = 0; i < sizeof(arr); i = i + (sizeof(*arr)))
+    {
+        l_put(new_node, arr[i]);
+    }
+    return new_node;
+}
+*/
+
+
 
 struct Node *l_concatenate(struct Node *first, struct Node *second)
 {
@@ -105,7 +120,7 @@ void l_for_loop(struct Node *head)
     struct Node *node = head->next;
     while (node != NULL)
     {
-        void * data = node->data;
+        void *data = node->data;
 
         /*
             here you should cast you data, ex:
@@ -137,6 +152,6 @@ main(int argc, char const *argv[])
     printf("\nConcatenate List:\n");
     printList(result);
     printf("\nConcatenate Length:%d\n", l_length(result));
-    printf("GET 0 element: %d", (int *)(l_get(result, 5)));
+    printf("GET 0 element: %d", (int *)(l_get(result, 5)));*/
     return 0;
 }
