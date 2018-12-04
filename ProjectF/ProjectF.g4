@@ -5,7 +5,7 @@ program
    ;
 
 declaration
-   : variable (':' type)? 'is' expression
+   : variable (':' type)? ('is' expression)?
    ;
 
 variable
@@ -83,7 +83,7 @@ function
    ;
 
 parameters
-   : declaration (',' declaration)*
+   : variable ':' type (',' variable ':' type)*
    ;
 
 body
@@ -243,7 +243,7 @@ Sign
     ;
 
 Identifier
-    :   Letter+
+    :   Letter (Letter | Digit)*
     ;
 
 IntegerLiteral
