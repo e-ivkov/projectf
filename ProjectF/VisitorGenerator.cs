@@ -278,11 +278,14 @@ namespace ProjectF
         public string GetParameterTypes(ProjectFParser.ParametersContext context)
         {
             var types = "";
-            foreach(var type in context?.type())
+            if (context?.type() != null)
             {
-                types += GetCType(type.GetText()) + ",";
-            }
-            types = types.Substring(0, types.Length - 1);
+                foreach (var type in context?.type())
+                {
+                    types += GetCType(type.GetText()) + ",";
+                }
+                types = types.Substring(0, types.Length - 1);
+             }
             return types;
         }
 
@@ -361,14 +364,20 @@ namespace ProjectF
             var result = VisitSecondary(context.secondary());
             if(context.expression() != null)
             {
-                result += " = " + VisitExpression(context.expression());
+                result += " = " + VisitExpression(context.expression()) + ";";
             }
             return result;
         }
 
         public override string VisitConditional([NotNull] ProjectFParser.ConditionalContext context)
         {
-            return base.VisitConditional(context);
+            var result = "if(" + VisitExpression(context.expression()) + "){\r\n" +
+                VisitStatements(context.statements()[0]) + "}\r\n";
+            if(context.statements().Length > 1)
+            {
+                result += "else{\r\n" + VisitStatements(context.statements()[1]) + "}\r\n";
+            }
+            return result;
         }
     }
 }
