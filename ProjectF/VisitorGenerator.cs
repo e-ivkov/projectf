@@ -30,7 +30,9 @@ namespace ProjectF
         private List<string> functions = new List<string>();
         private Dictionary<string, string> functionCast = new Dictionary<string, string>();
         private Dictionary<string, string> varFunction = new Dictionary<string, string>();
-        private Stack<string> initializers= new Stack<string>();
+        private Stack<string> initializers = new Stack<string>();
+        private Stack<string> listVarNames = new Stack<string>();
+        private int varCount = 0;
 
         public override string VisitProgram([NotNull] ProjectFParser.ProgramContext context)
         {
@@ -95,6 +97,7 @@ namespace ProjectF
             if (type[0] == '(' && type[type.Length-1] == ')')
             {
                 _listTable.Add(name, GetCType(type.Substring(1, type.Length - 2)));
+                listVarNames.Push(name);
                 type = "struct Node*";
                 ftype = FType.List;
             }
@@ -248,7 +251,7 @@ namespace ProjectF
             if (context.parameters() != null) {
                 parameters = VisitParameters(context.parameters());
             }
-            var name = "func" + (functions.Count + 1).ToString();
+            var name = "_func" + (functions.Count + 1).ToString();
             var function = GetCType(context.type().GetText()) + " " + name + " " + "(" + parameters + ")" + VisitBody(context.body());
             functions.Add(function);
             functionCast.Add(name, "(" + GetCType(context.type().GetText()) + "(*)" + "(" + GetParameterTypes(context.parameters()) + ")" + ")");
@@ -340,14 +343,32 @@ namespace ProjectF
         public override string VisitList([NotNull] ProjectFParser.ListContext context)
         {
             string listGenerator = "";
-            foreach(var expr in context.expressions()?.expression())
+            var currentListName = listVarNames.Pop();
+            var currentListType = _listTable[currentListName];
+            foreach (var expr in context.expressions()?.expression())
             {
-                listGenerator += "l_put(head, (void *)" + VisitExpression(expr) + ");\r\n";
+                var varName = "_ptr" + (varCount++).ToString();
+                listGenerator += "void *" + varName + " = malloc(sizeof(" + currentListType + "));\r\n";
+                listGenerator += "*(("+ currentListType +" *)" + varName + " = " + VisitExpression(expr) + ";\r\n";
+                listGenerator += "l_put(head, " + varName + ");\r\n";
             }
             initializers.Push(listGenerator);
             return "l_createEmptyList()";
         }
 
+        public override string VisitAssignmentOrCall([NotNull] ProjectFParser.AssignmentOrCallContext context)
+        {
+            var result = VisitSecondary(context.secondary());
+            if(context.expression() != null)
+            {
+                result += " = " + VisitExpression(context.expression());
+            }
+            return result;
+        }
 
+        public override string VisitConditional([NotNull] ProjectFParser.ConditionalContext context)
+        {
+            return base.VisitConditional(context);
+        }
     }
 }
