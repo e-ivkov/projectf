@@ -1,0 +1,4 @@
+i: integer is 0;
+while i < 5 loop
+  i:= i+1;
+end

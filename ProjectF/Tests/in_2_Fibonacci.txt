@@ -1,0 +1,11 @@
+n: integer is 3;
+first: integer is 0;
+second: integer is 1;
+i: integer is 0;
+while i < 5 loop
+  print(second);
+  third: integer is first+second;
+  first := second;
+  second := third;
+  i:= i+1;
+end

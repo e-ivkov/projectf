@@ -1,0 +1,4 @@
+i: integer is 0;
+for i in 0 .. 25 do
+	print(i);
+end
