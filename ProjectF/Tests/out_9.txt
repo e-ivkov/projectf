@@ -1,0 +1,10 @@
+#include "list.c"
+#include "print.c"
+int main(int argc, char const *argv[]){
+int i = 0;
+for(i = 0;i<25;i = i + 1){
+print_int(i);}
+ char temp; 
+ scanf ("press any key", &temp);
+return 0;
+ }

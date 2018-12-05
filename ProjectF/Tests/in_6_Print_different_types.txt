@@ -1,0 +1,9 @@
+a: integer is 3;
+b: real is 0;
+c: string is "Test";
+d: bool is false;
+
+print(a);
+print(b);
+print(c);
+print(d);

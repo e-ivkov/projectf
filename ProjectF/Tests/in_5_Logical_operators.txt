@@ -1,0 +1,6 @@
+a: bool is true;
+b: bool is false;
+
+if (a and b or a xor b) then
+	print(a);
+end

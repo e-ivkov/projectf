@@ -1,0 +1,14 @@
+#include "list.c"
+#include "print.c"
+int main(int argc, char const *argv[]){
+int n = 3;
+int first = 0;
+int second = 1;
+int i = 0;
+while(i<5){
+print_int(second);int third = first+second;
+first = second;second = third;i = i+1;}
+ char temp; 
+ scanf ("press any key", &temp);
+return 0;
+ }

@@ -1,0 +1,13 @@
+#include "list.c"
+#include "print.c"
+int main(int argc, char const *argv[]){
+typedef struct {
+    int a;
+    int b;
+} tuple;
+tuple.a = 1;
+tuple.b = 2;
+ char temp; 
+ scanf ("press any key", &temp);
+return 0;
+ }
